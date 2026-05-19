@@ -1,0 +1,54 @@
+/* ===== ページ全体の設定 ===== */
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	font-family: Arial, sans-serif;
+	background-color: #f4f6fb;
+	color: #1c2533;
+}
+
+.page-header {
+	padding: 18px 20px;
+	background: #ffffffcc;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	position: sticky;
+	top: 0;
+	z-index: 2;
+}
+
+.page-header h1 {
+	margin: 0 0 8px;
+	font-size: 1.8rem;
+}
+
+.page-header p {
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.6;
+	max-width: 760px;
+}
+
+/* ===== 地図コンテナの設定 ===== */
+#map {
+	width: 100%;
+	height: calc(100vh - 90px);
+}
+
+.mapboxgl-ctrl-top-right {
+	top: 108px;
+}
+
+.mapboxgl-popup-content {
+	font-family: Arial, sans-serif;
+	line-height: 1.5;
+}
+
+.mapboxgl-popup-content h3 {
+	margin: 0 0 8px;
+	font-size: 1.05rem;
+}
+
+.mapboxgl-popup-content p {
+	margin: 0 0 6px;
+}

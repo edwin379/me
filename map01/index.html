@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<!-- 文字エンコーディングをUTF-8に設定（日本語などの文字化けを防ぐ） -->
+	<meta charset="utf-8">
+
+	<!-- ブラウザのタブに表示されるページタイトル -->
+<title>Best Study Spots Map</title>
+
+	<!-- MapLibre GLのスタイルシート（地図の見た目を定義） -->
+	<link href="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.css" rel="stylesheet">
+
+	<!-- 独自のスタイルシート（地図のサイズなどをカスタマイズ） -->
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<header class="page-header">
+		<h1>Best Study Spots</h1>
+		<p>Quiet cafés, libraries, free Wi-Fi places, and outlet-friendly spots. Click a marker to see the best study features.</p>
+	</header>
+
+	<div id="map"></div>
+
+	<!-- MapLibre GLのJavaScriptライブラリを読み込む -->
+	<script src="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.js"></script>
+
+	<script>
+		// ===== 地図の初期化 =====
+		const map = new maplibregl.Map({
+			container: 'map',
+			style: 'https://demotiles.maplibre.org/style.json',
+			center: [139.759, 35.682],
+			zoom: 13
+		});
+
+		map.addControl(new maplibregl.NavigationControl());
+
+		const studySpots = [
+			{
+				name: 'Quiet Café Study',
+				coords: [139.762, 35.681],
+				type: 'Cafe',
+				description: 'Good Wi-Fi and not crowded. Plenty of outlets and calm seating.'
+			},
+			{
+				name: 'City Library',
+				coords: [139.754, 35.686],
+				type: 'Library',
+				description: 'Quiet reading rooms, free Wi-Fi, and study tables with power access.'
+			},
+			{
+				name: 'Campus Co-Work',
+				coords: [139.748, 35.678],
+				type: 'Co-working',
+				description: 'Modern work space with reliable Wi-Fi and many power outlets.'
+			},
+			{
+				name: 'Parkside Coffee',
+				coords: [139.761, 35.673],
+				type: 'Cafe',
+				description: 'Relaxed atmosphere, free Wi-Fi, and late-night hours for study sessions.'
+			},
+			{
+				name: 'Library Lounge',
+				coords: [139.768, 35.679],
+				type: 'Library',
+				description: 'Good lighting, quiet area, and outlets near every table.'
+			}
+		];
+
+		studySpots.forEach(spot => {
+			new maplibregl.Marker()
+				.setLngLat(spot.coords)
+				.setPopup(new maplibregl.Popup({ offset: 25 })
+					.setHTML(
+						`<h3>${spot.name}</h3><p><strong>${spot.type}</strong></p><p>${spot.description}</p>`
+					)
+				)
+				.addTo(map);
+		});
+	</script>
+
+</body>
+
+</html>
+
