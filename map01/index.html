@@ -6,21 +6,26 @@
 	<meta charset="utf-8">
 
 	<!-- ブラウザのタブに表示されるページタイトル -->
-<title>Best Study Spots Map</title>
+	<title>Public Toilet Map</title>
 
 	<!-- MapLibre GLのスタイルシート（地図の見た目を定義） -->
 	<link href="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.css" rel="stylesheet">
+
+	<!-- Papa Parse用のスタイルシート（CSV解析用） -->
+	<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 	<!-- 独自のスタイルシート（地図のサイズなどをカスタマイズ） -->
 	<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-	<header class="page-header">
-		<h1>Best Study Spots</h1>
-		<p>Quiet cafés, libraries, free Wi-Fi places, and outlet-friendly spots. Click a marker to see the best study features.</p>
-	</header>
 
+	<!-- タイトル -->
+	<div id="title-container">
+		<h1>【荒川区】公衆トイレ</h1>
+	</div>
+
+	<!-- 地図を表示するための空のコンテナ（id="map"で識別） -->
 	<div id="map"></div>
 
 	<!-- MapLibre GLのJavaScriptライブラリを読み込む -->
@@ -28,58 +33,130 @@
 
 	<script>
 		// ===== 地図の初期化 =====
+		// 新しい地図オブジェクトを作成
 		const map = new maplibregl.Map({
-			container: 'map',
-			style: 'https://demotiles.maplibre.org/style.json',
-			center: [139.759, 35.682],
-			zoom: 13
+			container: 'map',  // 地図を表示する要素のID
+			style: 'https://tiles.stadiamaps.com/styles/osm_bright.json',  // 詳細な地図（道路、建物などを表示）
+			center: [139.7671, 35.6812],  // 初期表示の中心座標 [経度, 緯度]（東京駅）
+			zoom: 10  // 初期ズームレベル
 		});
 
+		// ===== ナビゲーションコントロールの追加 =====
+		// 地図の右上にズームボタンと回転ボタンを追加
 		map.addControl(new maplibregl.NavigationControl());
 
-		const studySpots = [
-			{
-				name: 'Quiet Café Study',
-				coords: [139.762, 35.681],
-				type: 'Cafe',
-				description: 'Good Wi-Fi and not crowded. Plenty of outlets and calm seating.'
-			},
-			{
-				name: 'City Library',
-				coords: [139.754, 35.686],
-				type: 'Library',
-				description: 'Quiet reading rooms, free Wi-Fi, and study tables with power access.'
-			},
-			{
-				name: 'Campus Co-Work',
-				coords: [139.748, 35.678],
-				type: 'Co-working',
-				description: 'Modern work space with reliable Wi-Fi and many power outlets.'
-			},
-			{
-				name: 'Parkside Coffee',
-				coords: [139.761, 35.673],
-				type: 'Cafe',
-				description: 'Relaxed atmosphere, free Wi-Fi, and late-night hours for study sessions.'
-			},
-			{
-				name: 'Library Lounge',
-				coords: [139.768, 35.679],
-				type: 'Library',
-				description: 'Good lighting, quiet area, and outlets near every table.'
-			}
-		];
+		// ===== CSV データの読み込みと処理 =====
+		// マップロード完了後にCSVを読み込む
+		map.on('load', function() {
+			// CSVファイルを取得
+			fetch('131181_public_toilet.csv')
+				.then(response => response.text())
+				.then(csvText => {
+					// Papa Parseを使用してCSVを解析
+					Papa.parse(csvText, {
+						header: true,  // 最初の行をヘッダーとして使用
+						encoding: 'utf-8',
+						complete: function(results) {
+							const toilets = results.data;
+							const bounds = new maplibregl.LngLatBounds();
+							let markerCount = 0;
 
-		studySpots.forEach(spot => {
-			new maplibregl.Marker()
-				.setLngLat(spot.coords)
-				.setPopup(new maplibregl.Popup({ offset: 25 })
-					.setHTML(
-						`<h3>${spot.name}</h3><p><strong>${spot.type}</strong></p><p>${spot.description}</p>`
-					)
-				)
-				.addTo(map);
+							// 各トイレのマーカーを追加
+							toilets.forEach((toilet, index) => {
+								// 緯度と経度を取得
+								const lat = parseFloat(toilet['緯度']);
+								const lng = parseFloat(toilet['経度']);
+
+								// 有効な座標があればマーカーを追加
+								if (!isNaN(lat) && !isNaN(lng)) {
+									// トイレ情報を取得
+									const name = toilet['名称'] || 'トイレ';
+									const address = toilet['所在地_連結表記'] || '住所不明';
+									const maleCount = toilet['男性トイレ総数'] || '0';
+									const femaleCount = toilet['女性トイレ総数'] || '0';
+									const unisexCount = toilet['男女共用トイレ総数'] || '0';
+									const wheelchairAccessible = toilet['車椅子使用者用トイレ有無'] || '無';
+									const babyFacilities = toilet['乳幼児用設備設置トイレ有無'] || '無';
+									const ostomateFacilities = toilet['オストメイト設置トイレ有無'] || '無';
+									const openTime = toilet['利用開始時間'] || '24時間';
+									const closeTime = toilet['利用終了時間'] || '24時間';
+									const notes = toilet['備考'] || '';
+									const barrierfreeCount = toilet['バリアフリートイレ数'] || '0';
+									
+									// Google Maps リンク
+									const googleMapsUrl = `https://www.google.com/maps/search/${lat},${lng}`;
+									
+									// HTML ポップアップコンテンツを作成
+									const popupHTML = `
+										<div style="font-family: sans-serif; width: 300px; padding: 10px;">
+											<h3 style="margin: 0 0 10px 0; color: #333;">${name}</h3>
+											<p style="margin: 5px 0; color: #666;"><strong>住所:</strong> ${address}</p>
+											<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+											<p style="margin: 5px 0; color: #666;"><strong>営業時間:</strong> ${openTime} - ${closeTime}</p>
+											<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+											<div style="font-size: 13px; color: #555;">
+												<p style="margin: 5px 0;"><strong>トイレ数:</strong></p>
+												<ul style="margin: 3px 0; padding-left: 20px;">
+													<li>男性: ${maleCount}個</li>
+													<li>女性: ${femaleCount}個</li>
+													<li>男女共用: ${unisexCount}個</li>
+												</ul>
+											</div>
+											<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+											<div style="font-size: 13px; color: #555;">
+												<p style="margin: 5px 0;"><strong>設備:</strong></p>
+												<ul style="margin: 3px 0; padding-left: 20px;">
+													<li>車椅子アクセス: ${wheelchairAccessible}</li>
+													<li>乳幼児設備: ${babyFacilities}</li>
+													<li>オストメイト設備: ${ostomateFacilities}</li>
+													<li>バリアフリー: ${barrierfreeCount}個</li>
+												</ul>
+											</div>
+											${notes ? `<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;"><p style="margin: 5px 0; font-size: 12px;"><strong>備考:</strong> ${notes}</p>` : ''}
+											<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+											<p style="margin: 5px 0; text-align: center;">
+												<a href="${googleMapsUrl}" target="_blank" style="background-color: #4285F4; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 13px; display: inline-block;">
+													📍 Googleマップで表示
+												</a>
+											</p>
+										</div>
+									`;
+									
+									// マーカーを作成
+									new maplibregl.Marker()
+										.setLngLat([lng, lat])
+										.setPopup(
+											new maplibregl.Popup({ maxWidth: 350 })
+												.setHTML(popupHTML)
+										)
+										.addTo(map);
+
+									// 境界線を拡張
+									bounds.extend([lng, lat]);
+									markerCount++;
+								}
+							});
+
+							// すべてのマーカーが見えるようにズーム
+							if (markerCount > 0) {
+								map.fitBounds(bounds, {
+									padding: 50,
+									maxZoom: 15
+								});
+							}
+
+							console.log(`${markerCount} toilets loaded`);
+						},
+						error: function(error) {
+							console.error('Error parsing CSV:', error);
+						}
+					});
+				})
+				.catch(error => {
+					console.error('Error loading CSV:', error);
+				});
 		});
+
 	</script>
 
 </body>
